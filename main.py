@@ -80,6 +80,7 @@ ohlcv = get_data(exchanges, symbols)
 print_last_ohlcv(ohlcv)
 
 sums = calculate_sum(ohlcv)
+print('Sum of volumes for current and last hour: ', sums[-1], sums[-2])
 
 sma = sum(sums) / len(sums)
 print('SMA', sma)
