@@ -88,19 +88,29 @@ def check_close_cond(exchanges, type, sl_level, tp_level):
     open, high, low, close = get_current_ohlc(exchanges)
     if type == 'long':
         if close >= tp_level:
-            print(str(datetime.now()), 'long hit tp')
+            # print(str(datetime.now()), 'long hit tp')
+            log('long hit tp')
             return True
         elif close <= sl_level:
-            print(str(datetime.now()), 'long hit sl')
+            # print(str(datetime.now()), 'long hit sl')
+            log('long hit sl')
             return True
     else:
         if close <= tp_level:
-            print(str(datetime.now()), 'short hit tp')
+            # print(str(datetime.now()), 'short hit tp')
+            log('short hit tp')
             return True
         elif close >= sl_level:
-            print(str(datetime.now()), 'short hit sl')
+            # print(str(datetime.now()), 'short hit sl')
+            log('short hit sl')
             return True
     return False
+
+
+def log(data):
+    with open('log.txt', 'a') as f:
+        print(str(datetime.now()) + ' ' + data)
+        f.write(str(datetime.now()) + ' ' + data + '\n')
 
 
 def main():
@@ -110,10 +120,12 @@ def main():
             ohlcv = get_data(exchanges, symbols)
             # print_last_ohlcv(ohlcv)
             sums = calculate_sum(ohlcv)
-            print('Sum of volumes for last 2 hours: ', sums[-1], sums[-2])
+            # print('Sum of volumes for last 2 hours: ', sums[-1], sums[-2])
+            log('Sum of volumes for last 2 hours: ' + str(sums[-1]) + ' ' + str(sums[-2]))
 
             sma = sum(sums) / len(sums)
-            print('SMA', sma)
+            # print('SMA', sma)
+            log('SMA ' + str(sma))
 
             htfopen = [ohlcv['bitmex'][-1][1], ohlcv['bitmex'][-2][1]]
             htfhigh = [ohlcv['bitmex'][-1][2], ohlcv['bitmex'][-2][2]]
@@ -139,16 +151,17 @@ def main():
                 tp = (1 + 0.01 * TP_PERCENT) * entry_price if long_entry else (1 - 0.01 * TP_PERCENT)
                 type = 'long' if long_entry else 'close'
 
-                print(str(datetime.now()), 'Entered ' + type + ' at' + str(entry_price))
+                # print(str(datetime.now()), 'Entered ' + type + ' at' + str(entry_price))
+                log('Entered ' + type + ' at' + str(entry_price))
                 while check_close_cond(exchanges, type, sl, tp):
                     time.sleep(5 * 60 + randint(0, 30))
                 closed_order = True
 
             if not closed_order:
                 time.sleep(5 * 60 + randint(0, 30))
-                
+
         except Exception as e:
-            print(e)
+            log(e)
 
 
 if __name__ == '__main__':
