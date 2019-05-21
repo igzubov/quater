@@ -110,7 +110,7 @@ def check_close_cond(exchanges, type, sl_level, tp_level):
 def log(data):
     with open('log.txt', 'a') as f:
         print(str(datetime.now()) + ' ' + data)
-        f.write(str(datetime.now()) + ' ' + data + '\n')
+        f.write(str(datetime.now()) + ' ' + str(data) + '\n')
 
 
 def main():
@@ -137,8 +137,8 @@ def main():
             up_major = htfclose[0] > ((htfhigh[0] + htflow[0]) / 2)
             down_major = htfclose[0] < ((htfhigh[0] + htflow[0]) / 2)
 
-            climactic_up = htfclose[0] if htfclose[0] > htfclose[1] and htfclose > htfopen and up_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
-            climactic_down = htfclose[0] if htfclose[1] > htfclose[0] and htfclose < htfopen and down_major and htfvolume_sum > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
+            climactic_up = htfclose[0] if htfclose[0] > htfclose[1] and htfclose[0] > htfopen[0] and up_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
+            climactic_down = htfclose[0] if htfclose[1] > htfclose[0] and htfclose[0] < htfopen[0] and down_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
 
             open, high, low, close = get_current_ohlc(exchanges)
 
