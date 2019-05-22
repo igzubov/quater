@@ -153,7 +153,7 @@ def main():
 
                 # print(str(datetime.now()), 'Entered ' + type + ' at' + str(entry_price))
                 log('Entered ' + type + ' at' + str(entry_price))
-                while check_close_cond(exchanges, type, sl, tp):
+                while not check_close_cond(exchanges, type, sl, tp):
                     time.sleep(5 * 60 + randint(0, 30))
                 closed_order = True
 
