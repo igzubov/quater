@@ -109,7 +109,7 @@ def check_close_cond(exchanges, type, sl_level, tp_level):
 
 def log(data):
     with open('log.txt', 'a') as f:
-        print(str(datetime.now()) + ' ' + data)
+        print(str(datetime.now()) + ' ' + str(data))
         f.write(str(datetime.now()) + ' ' + str(data) + '\n')
 
 
@@ -149,7 +149,7 @@ def main():
                 entry_price = (open + high + low + close) / 4
                 sl = (1 - 0.01 * SL_PERCENT) * entry_price if long_entry else (1 + 0.01 * SL_PERCENT)
                 tp = (1 + 0.01 * TP_PERCENT) * entry_price if long_entry else (1 - 0.01 * TP_PERCENT)
-                type = 'long' if long_entry else 'close'
+                type = 'long' if long_entry else 'short'
 
                 # print(str(datetime.now()), 'Entered ' + type + ' at' + str(entry_price))
                 log('Entered ' + type + ' at' + str(entry_price))
