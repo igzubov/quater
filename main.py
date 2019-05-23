@@ -123,6 +123,7 @@ def enter_position(long_entry, short_entry, open, high, low, close):
     tp = (1 + 0.01 * TP_PERCENT) * entry_price if long_entry else (1 - 0.01 * TP_PERCENT)
     type = 'long' if long_entry else 'short'
     log('Entered ' + type + ' at' + str(entry_price))
+    return type, tp, sl
 
 
 def log(data):
@@ -167,15 +168,14 @@ def main():
             short_entry = close <= climactic_up and close <= climactic_down and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1]
 
             if not entered and (long_entry or short_entry):
-                enter_position(long_entry, short_entry, open, high, low, close)
+                type, tp, sl = enter_position(long_entry, short_entry, open, high, low, close)
                 entered = True
 
             if entered:
                 if check_close_cond(exchanges, type, sl, tp):
                     entered = False
                 elif check_opposite_signal(long_entry, short_entry, type):
-                    entered = False
-                    enter_position(long_entry, short_entry, open, high, low, close)
+                    type, tp, sl = enter_position(long_entry, short_entry, open, high, low, close)
 
             time.sleep(5 * 60 + randint(0, 30))
 
