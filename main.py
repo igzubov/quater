@@ -107,6 +107,24 @@ def check_close_cond(exchanges, type, sl_level, tp_level):
     return False
 
 
+def check_opposite_signal(long_entry, short_entry, type):
+    if type == 'long' and short_entry:
+        log('opposite signal short')
+        return True
+    elif type == 'short' and long_entry:
+        log('opposite signal long')
+        return True
+    return False
+
+
+def enter_position(long_entry, short_entry, open, high, low, close):
+    entry_price = (open + high + low + close) / 4
+    sl = (1 - 0.01 * SL_PERCENT) * entry_price if long_entry else (1 + 0.01 * SL_PERCENT)
+    tp = (1 + 0.01 * TP_PERCENT) * entry_price if long_entry else (1 - 0.01 * TP_PERCENT)
+    type = 'long' if long_entry else 'short'
+    log('Entered ' + type + ' at' + str(entry_price))
+
+
 def log(data):
     with open('log.txt', 'a') as f:
         print(str(datetime.now()) + ' ' + str(data))
@@ -114,9 +132,12 @@ def log(data):
 
 
 def main():
+    type = ''
+    tp = 0
+    sl = 0
+    entered = False
     while True:
         try:
-            closed_order = False
             ohlcv = get_data(exchanges, symbols)
             # print_last_ohlcv(ohlcv)
             sums = calculate_sum(ohlcv)
@@ -145,20 +166,18 @@ def main():
             long_entry = close >= climactic_up and close >= climactic_down and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1]
             short_entry = close <= climactic_up and close <= climactic_down and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1]
 
-            if long_entry or short_entry:
-                entry_price = (open + high + low + close) / 4
-                sl = (1 - 0.01 * SL_PERCENT) * entry_price if long_entry else (1 + 0.01 * SL_PERCENT)
-                tp = (1 + 0.01 * TP_PERCENT) * entry_price if long_entry else (1 - 0.01 * TP_PERCENT)
-                type = 'long' if long_entry else 'short'
+            if not entered and (long_entry or short_entry):
+                enter_position(long_entry, short_entry, open, high, low, close)
+                entered = True
 
-                # print(str(datetime.now()), 'Entered ' + type + ' at' + str(entry_price))
-                log('Entered ' + type + ' at' + str(entry_price))
-                while not check_close_cond(exchanges, type, sl, tp):
-                    time.sleep(5 * 60 + randint(0, 30))
-                closed_order = True
+            if entered:
+                if check_close_cond(exchanges, type, sl, tp):
+                    entered = False
+                elif check_opposite_signal(long_entry, short_entry, type):
+                    entered = False
+                    enter_position(long_entry, short_entry, open, high, low, close)
 
-            if not closed_order:
-                time.sleep(5 * 60 + randint(0, 30))
+            time.sleep(5 * 60 + randint(0, 30))
 
         except Exception as e:
             log(e)
