@@ -162,8 +162,8 @@ def main():
             up_major = htfclose[0] > ((htfhigh[0] + htflow[0]) / 2)
             down_major = htfclose[0] < ((htfhigh[0] + htflow[0]) / 2)
 
-            climactic_up = htfopen[0] if htfclose[0] > htfclose[1] and htfclose[0] > htfopen[0] and up_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
-            climactic_down = htfopen[0] if htfclose[1] > htfclose[0] and htfclose[0] < htfopen[0] and down_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
+            climactic_up = htfclose[0] if htfclose[0] > htfclose[1] and htfclose[0] > htfopen[0] and up_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
+            climactic_down = htfclose[0] if htfclose[1] > htfclose[0] and htfclose[0] < htfopen[0] and down_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
             log('climatic up: ' + str(climactic_up) + ' climetic down: ' + str(climactic_down))
 
             open, high, low, close = get_current_ohlc(exchanges)
