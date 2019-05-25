@@ -141,7 +141,10 @@ def main():
         try:
             ohlcv = get_data(exchanges, symbols)
             # print_last_ohlcv(ohlcv)
-            sums = calculate_sum(ohlcv)
+            try:
+                sums = calculate_sum(ohlcv)
+            except IndexError:
+                log(ohlcv)
             # print('Sum of volumes for last 2 hours: ', sums[-1], sums[-2])
             log('Sum of volumes for last 2 hours: ' + str(sums[-1]) + ' ' + str(sums[-2]))
 
