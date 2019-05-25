@@ -181,7 +181,7 @@ def main():
                 elif check_opposite_signal(long_entry, short_entry, type):
                     type, tp, sl = enter_position(long_entry, short_entry, open, high, low, close)
 
-            time.sleep(5 * 60 + randint(0, 30))
+            time.sleep(1 * 60 + randint(0, 30))
 
         except Exception as e:
             time.sleep(5)
