@@ -144,7 +144,7 @@ def main():
             try:
                 sums = calculate_sum(ohlcv)
             except IndexError:
-                log(ohlcv)
+                time.sleep(60)
             # print('Sum of volumes for last 2 hours: ', sums[-1], sums[-2])
             log('Sum of volumes for last 2 hours: ' + str(sums[-1]) + ' ' + str(sums[-2]))
 
@@ -164,12 +164,12 @@ def main():
 
             climactic_up = htfclose[0] if htfclose[0] > htfclose[1] and htfclose[0] > htfopen[0] and up_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
             climactic_down = htfclose[0] if htfclose[1] > htfclose[0] and htfclose[0] < htfopen[0] and down_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
-            log('climatic up: ' + str(climactic_up) + ' climetic down: ' + str(climactic_down))
+            log('climactic up: ' + str(climactic_up) + ' climactic down: ' + str(climactic_down))
 
             open, high, low, close = get_current_ohlc(exchanges)
 
-            long_entry = close >= climactic_up and close >= climactic_down and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1]
-            short_entry = close <= climactic_up and close <= climactic_down and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1]
+            long_entry = climactic_up > 0 and close > climactic_up and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1]
+            short_entry = climactic_down > 0 and close < climactic_down and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1]
             log('long entry: ' + str(long_entry) + ' short entry: ' + str(short_entry))
 
             if not entered and (long_entry or short_entry):
