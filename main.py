@@ -181,6 +181,7 @@ def main():
             time.sleep(5 * 60 + randint(0, 30))
 
         except Exception as e:
+            time.sleep(5)
             log(e)
 
 
