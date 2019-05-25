@@ -122,7 +122,7 @@ def enter_position(long_entry, short_entry, open, high, low, close):
     sl = (1 - 0.01 * SL_PERCENT) * entry_price if long_entry else (1 + 0.01 * SL_PERCENT)
     tp = (1 + 0.01 * TP_PERCENT) * entry_price if long_entry else (1 - 0.01 * TP_PERCENT)
     type = 'long' if long_entry else 'short'
-    log('Entered ' + type + ' at' + str(entry_price))
+    log('Entered ' + type + ' at ' + str(entry_price))
     return type, tp, sl
 
 
@@ -166,6 +166,7 @@ def main():
 
             long_entry = close >= climactic_up and close >= climactic_down and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1]
             short_entry = close <= climactic_up and close <= climactic_down and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1]
+            log('long entry: ' + str(long_entry) + ' short entry: ' + str(short_entry))
 
             if not entered and (long_entry or short_entry):
                 type, tp, sl = enter_position(long_entry, short_entry, open, high, low, close)
