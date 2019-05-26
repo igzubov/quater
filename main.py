@@ -119,8 +119,8 @@ def check_opposite_signal(long_entry, short_entry, type):
 
 def enter_position(long_entry, short_entry, open, high, low, close):
     entry_price = (open + high + low + close) / 4
-    sl = (1 - 0.01 * SL_PERCENT) * entry_price if long_entry else (1 + 0.01 * SL_PERCENT)
-    tp = (1 + 0.01 * TP_PERCENT) * entry_price if long_entry else (1 - 0.01 * TP_PERCENT)
+    sl = (1 - 0.01 * SL_PERCENT) * entry_price if long_entry else (1 + 0.01 * SL_PERCENT) * entry_price
+    tp = (1 + 0.01 * TP_PERCENT) * entry_price if long_entry else (1 - 0.01 * TP_PERCENT) * entry_price
     type = 'long' if long_entry else 'short'
     log('Entered ' + type + ' at ' + str(entry_price))
     return type, tp, sl
