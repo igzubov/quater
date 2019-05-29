@@ -1,26 +1,35 @@
 import time
 from random import randint
-
 import requests
-
 from ccxt import binance, bitstamp, bitfinex, coinbasepro, bitmex, hitbtc2, kraken, bittrex, huobipro
-
-# API KEYS ZONE
 from datetime import datetime, timedelta
-
 from dateutil import parser
 
-BITMEX_API_KEY = 'f'
+
+# API KEYS ZONE
+BITMEX_API_KEY = ''
 BITMEX_API_SECRET = ''
 
 # SL & TP LEVELS
-SL_PERCENT = 5
-TP_PERCENT = 3
+SL_LEVEL = 200
+TP_LEVEL = 500
+SL2_LEVEL = 50
+SL_OFFSET = 30
+
+# TRADE SIZE
+TRADE_SIZE = 500
 
 exchanges = {'binance': binance(), 'bitstamp': bitstamp(), 'bitfinex': bitfinex(), 'coinbase': coinbasepro(),
              'bitmex': bitmex(), 'hitbtc': hitbtc2(), 'kraken': kraken(), 'bittrex': bittrex(), 'huobi': huobipro()}
 symbols = {'binance': 'BTC/USDC', 'bitstamp': 'BTC/USD', 'bitfinex': 'BTC/USD', 'coinbase': 'BTC/USD',
            'bitmex': 'BTC/USD', 'hitbtc': 'BTC/USDT', 'kraken': 'BTC/USD', 'bittrex': 'BTC/USD', 'huobi': 'BTC/USDT'}
+
+btmx = bitmex({'apiKey': BITMEX_API_KEY, 'secret': BITMEX_API_SECRET})
+
+# uncomment for testnet
+# if 'test' in btmx.urls:
+#     btmx.urls['api'] = btmx.urls['test']  # ←----- switch the base URL to testnet
+#     exchanges['bitmex'].urls['api'] = exchanges['bitmex'].urls['test']
 
 
 # use external website to get bitstamp volume historical data
@@ -117,13 +126,90 @@ def check_opposite_signal(long_entry, short_entry, type):
     return False
 
 
+def check_profit(type, set_price, curr_price):
+    diff = curr_price - set_price
+    if type == 'long' and diff >= 50:
+        return True
+        bitmex_sl2(set_price + 20, -1, -30)
+    elif type == 'short' and diff <= -50:
+        return True
+
+    return False
+
+
+def bitmex_close_pos():
+    res = None
+    params = {'symbol': 'XBTUSD', 'execInst': 'Close'}
+    while not res:
+        res = btmx.private_post_order(params)
+
+
+def bitmex_remove_ord():
+    res = None
+    params = {'symbol': 'XBTUSD'}
+    while not res:
+        res = btmx.private_delete_order_all(params)
+
+
+def bitmex_move_trail(price, order_qty, order_id):
+    res = None
+    params = {'orderID': order_id, 'orderQty': order_qty, 'stopPx': price, 'ordType': 'MarketIfTouched',
+              'execInst': 'LastPrice'}
+    while not res:
+        res = btmx.private_put_order(params)
+
+
+def bitmex_sl(stop_price, order_qty):
+    res = None
+    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'ordType': 'Stop', 'stopPx': stop_price, 'execInst': 'LastPrice'}
+    while not res:
+        res = btmx.private_post_order(params)
+    return res['orderID']
+
+
+def bitmex_sl2(stop_price, order_qty, offset):
+    res = None
+    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'ordType': 'Stop', 'pegPriceType': 'TrailingStopPeg', 'stopPx': stop_price, 'pegOffsetValue': offset, 'execInst': 'LastPrice'}
+    while not res:
+        res = btmx.private_post_order(params)
+    return res['orderID']
+
+
+def bitmex_tp(price, order_qty):
+    res = None
+    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'stopPx': price, 'ordType': 'MarketIfTouched', 'execInst': 'LastPrice'}
+    while not res:
+        res = btmx.private_post_order(params)
+    return res['orderID']
+
+
+def bitmex_enter(price, order_qty):
+    res = None
+    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'price': price, 'ordType': 'Limit'}
+    while not res:
+        res = btmx.private_post_order(params)
+    return res['orderID']
+
+
 def enter_position(long_entry, short_entry, open, high, low, close):
     entry_price = (open + high + low + close) / 4
-    sl = (1 - 0.01 * SL_PERCENT) * entry_price if long_entry else (1 + 0.01 * SL_PERCENT) * entry_price
-    tp = (1 + 0.01 * TP_PERCENT) * entry_price if long_entry else (1 - 0.01 * TP_PERCENT) * entry_price
+    sl = entry_price - SL_LEVEL if long_entry else entry_price + SL_LEVEL
+    tp = entry_price + TP_LEVEL if long_entry else entry_price - TP_LEVEL
     type = 'long' if long_entry else 'short'
     log('Entered ' + type + ' at ' + str(entry_price))
-    return type, tp, sl
+
+    entry_price = round(entry_price / 0.5) * 0.5
+    sl = round(sl / 0.5) * 0.5
+    tp = round(tp / 0.5) * 0.5
+
+    order_qty = TRADE_SIZE if type == 'long' else -TRADE_SIZE
+    bitmex_enter(entry_price, order_qty)
+    # place stop loss
+    bitmex_sl(sl, order_qty * -1)
+    # place take profit
+    bitmex_tp(tp, order_qty * -1)
+
+    return type, tp, sl, entry_price
 
 
 def log(data):
@@ -134,6 +220,7 @@ def log(data):
 
 def main():
     type = ''
+    set_price = 0
     tp = 0
     sl = 0
     entered = False
@@ -173,14 +260,25 @@ def main():
             log('long entry: ' + str(long_entry) + ' short entry: ' + str(short_entry))
 
             if not entered and (long_entry or short_entry):
-                type, tp, sl = enter_position(long_entry, short_entry, open, high, low, close)
+                type, tp, sl, set_price = enter_position(long_entry, short_entry, open, high, low, close)
                 entered = True
 
             if entered:
-                if check_close_cond(exchanges, type, sl, tp):
+                dbg = check_profit(type, set_price, close)
+                if dbg:
+                    sl2 = set_price + SL_OFFSET if type == 'long' else set_price - SL_OFFSET
+                    offset = -SL_OFFSET if type == 'long' else SL_OFFSET
+                    order_qty = -TRADE_SIZE if type == 'long' else TRADE_SIZE
+                    bitmex_sl2(sl2, order_qty, offset)
+                dbg2 = check_close_cond(exchanges, type, sl, tp)
+                if dbg2:
+                    bitmex_close_pos()
+                    bitmex_remove_ord()
                     entered = False
                 elif check_opposite_signal(long_entry, short_entry, type):
-                    type, tp, sl = enter_position(long_entry, short_entry, open, high, low, close)
+                    bitmex_close_pos()
+                    bitmex_remove_ord()
+                    type, tp, sl, set_price = enter_position(long_entry, short_entry, open, high, low, close)
 
             time.sleep(1 * 60 + randint(0, 30))
 
