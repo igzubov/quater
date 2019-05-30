@@ -130,7 +130,6 @@ def check_profit(type, set_price, curr_price):
     diff = curr_price - set_price
     if type == 'long' and diff >= 50:
         return True
-        bitmex_sl2(set_price + 20, -1, -30)
     elif type == 'short' and diff <= -50:
         return True
 
@@ -246,8 +245,9 @@ def main():
             htfvolume_sum = [sums[-1], sums[-2]]
             htfx_sma = sma
 
-            up_major = htfclose[0] > ((htfhigh[0] + htflow[0]) / 2)
-            down_major = htfclose[0] < ((htfhigh[0] + htflow[0]) / 2)
+            range = htfhigh[0] - htflow[0]
+            up_major = htfclose[0] >= (htflow[0] + (0.60 * range)) and htfopen[0] >= htflow[0] - 0.10 * range
+            down_major = htfclose[0] <= (htfhigh[0] - (0.60 * range)) and htfopen[0] <= htfhigh[0] + 0.10 * range
 
             climactic_up = htfclose[0] if htfclose[0] > htfclose[1] and htfclose[0] > htfopen[0] and up_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
             climactic_down = htfclose[0] if htfclose[1] > htfclose[0] and htfclose[0] < htfopen[0] and down_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
