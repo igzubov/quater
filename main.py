@@ -89,7 +89,7 @@ def calculate_sum(ohlcv):
 
 
 def get_current_ohlc(exchanges):
-    ohlcv = exchanges['bitmex'].fetch_ohlcv('BTC/USD', '1h', (datetime.now() - timedelta(hours=1)).timestamp() * 1000)[-1]
+    ohlcv = exchanges['coinbase'].fetch_ohlcv('BTC/USD', '1h', (datetime.now() - timedelta(hours=1)).timestamp() * 1000)[-1]
     return ohlcv[1], ohlcv[2], ohlcv[3], ohlcv[4]
 
 
@@ -238,10 +238,10 @@ def main():
             # print('SMA', sma)
             log('SMA ' + str(sma))
 
-            htfopen = [ohlcv['bitmex'][-1][1], ohlcv['bitmex'][-2][1]]
-            htfhigh = [ohlcv['bitmex'][-1][2], ohlcv['bitmex'][-2][2]]
-            htflow = [ohlcv['bitmex'][-1][3], ohlcv['bitmex'][-2][3]]
-            htfclose = [ohlcv['bitmex'][-1][4], ohlcv['bitmex'][-2][4]]
+            htfopen = [ohlcv['coinbase'][-1][1], ohlcv['coinbase'][-2][1]]
+            htfhigh = [ohlcv['coinbase'][-1][2], ohlcv['coinbase'][-2][2]]
+            htflow = [ohlcv['coinbase'][-1][3], ohlcv['bitmex'][-2][3]]
+            htfclose = [ohlcv['coinbase'][-1][4], ohlcv['coinbase'][-2][4]]
             htfvolume_sum = [sums[-1], sums[-2]]
             htfx_sma = sma
 
