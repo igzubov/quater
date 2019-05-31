@@ -1,10 +1,12 @@
+import json
 import time
 from random import randint
+from threading import Thread
+
 import requests
 from ccxt import binance, bitstamp, bitfinex, coinbasepro, bitmex, hitbtc2, kraken, bittrex, huobipro
 from datetime import datetime, timedelta
 from dateutil import parser
-
 
 # API KEYS ZONE
 BITMEX_API_KEY = ''
@@ -26,10 +28,37 @@ symbols = {'binance': 'BTC/USDC', 'bitstamp': 'BTC/USD', 'bitfinex': 'BTC/USD', 
 
 btmx = bitmex({'apiKey': BITMEX_API_KEY, 'secret': BITMEX_API_SECRET})
 
+
+new_signal = False
 # uncomment for testnet
 # if 'test' in btmx.urls:
 #     btmx.urls['api'] = btmx.urls['test']  # ←----- switch the base URL to testnet
 #     exchanges['bitmex'].urls['api'] = exchanges['bitmex'].urls['test']
+
+
+def bitmex_virtual_sl(set_price, type):
+    is_profit = False
+    sl_price = set_price - SL_OFFSET if type == 'long' else set_price + SL_OFFSET
+    while not is_profit and not new_signal:
+        curr_price = bitmex_last_price()
+        is_profit = check_profit(type, set_price, curr_price)
+        time.sleep(2)
+    while bitmex_check_position() and not new_signal:
+        time.sleep(2)
+        curr_price = bitmex_last_price()
+
+        diff = curr_price - set_price
+
+        if type == 'long' and diff >= SL_OFFSET:
+            sl_price = curr_price - SL_OFFSET
+        elif type == 'short' and diff <= SL_OFFSET:
+            sl_price = curr_price + SL_OFFSET
+
+        if (type == 'long' and curr_price <= sl_price) or (type == 'short' and curr_price >= sl_price):
+            time.sleep(1)
+            bitmex_close_pos()
+            bitmex_remove_ord()
+            break
 
 
 # use external website to get bitstamp volume historical data
@@ -52,7 +81,7 @@ def get_bitstamp_vol():
 def fix_bitmex_vol(bitmex_ohlcv):
     bitmex_ohlcv = bitmex_ohlcv[1:]
     for candle in bitmex_ohlcv:
-        old_date = datetime.fromtimestamp(candle[0]/1000)
+        old_date = datetime.fromtimestamp(candle[0] / 1000)
         new_date = old_date - timedelta(hours=1)
         candle[0] = int(new_date.timestamp() * 1000)
     return bitmex_ohlcv
@@ -88,8 +117,17 @@ def calculate_sum(ohlcv):
     return sum
 
 
+def bitmex_last_price():
+    res = None
+    params = {'symbol': 'XBT'}
+    while not res:
+        res = btmx.public_get_instrument(params)
+    return res[0]['lastPrice']
+
+
 def get_current_ohlc(exchanges):
-    ohlcv = exchanges['coinbase'].fetch_ohlcv('BTC/USD', '1h', (datetime.now() - timedelta(hours=1)).timestamp() * 1000)[-1]
+    ohlcv = \
+        exchanges['coinbase'].fetch_ohlcv('BTC/USD', '1h', (datetime.now() - timedelta(hours=1)).timestamp() * 1000)[-1]
     return ohlcv[1], ohlcv[2], ohlcv[3], ohlcv[4]
 
 
@@ -160,7 +198,8 @@ def bitmex_move_trail(price, order_qty, order_id):
 
 def bitmex_sl(stop_price, order_qty):
     res = None
-    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'ordType': 'Stop', 'stopPx': stop_price, 'execInst': 'LastPrice'}
+    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'ordType': 'Stop', 'stopPx': stop_price,
+              'execInst': 'LastPrice'}
     while not res:
         res = btmx.private_post_order(params)
     return res['orderID']
@@ -168,15 +207,26 @@ def bitmex_sl(stop_price, order_qty):
 
 def bitmex_sl2(stop_price, order_qty, offset):
     res = None
-    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'ordType': 'Stop', 'pegPriceType': 'TrailingStopPeg', 'stopPx': stop_price, 'pegOffsetValue': offset, 'execInst': 'LastPrice'}
+    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'ordType': 'Stop', 'pegPriceType': 'TrailingStopPeg',
+              'stopPx': stop_price, 'pegOffsetValue': offset, 'execInst': 'LastPrice'}
     while not res:
         res = btmx.private_post_order(params)
     return res['orderID']
 
 
+def bitmex_check_position():
+    res = None
+    filter = json.dumps({'symbol': 'XBTUSD'})
+    params = {'filter': filter, 'count': 1}
+    while not res:
+        res = btmx.private_get_position(params)
+    return res[0]['isOpen']
+
+
 def bitmex_tp(price, order_qty):
     res = None
-    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'stopPx': price, 'ordType': 'MarketIfTouched', 'execInst': 'LastPrice'}
+    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'stopPx': price, 'ordType': 'MarketIfTouched',
+              'execInst': 'LastPrice'}
     while not res:
         res = btmx.private_post_order(params)
     return res['orderID']
@@ -184,14 +234,14 @@ def bitmex_tp(price, order_qty):
 
 def bitmex_enter(price, order_qty):
     res = None
-    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'price': price, 'ordType': 'Limit'}
+    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'ordType': 'Market'}
     while not res:
         res = btmx.private_post_order(params)
     return res['orderID']
 
 
 def enter_position(long_entry, short_entry, open, high, low, close):
-    entry_price = (open + high + low + close) / 4
+    entry_price = bitmex_last_price()  # (open + high + low + close) / 4
     sl = entry_price - SL_LEVEL if long_entry else entry_price + SL_LEVEL
     tp = entry_price + TP_LEVEL if long_entry else entry_price - TP_LEVEL
     type = 'long' if long_entry else 'short'
@@ -249,36 +299,38 @@ def main():
             up_major = htfclose[0] >= (htflow[0] + (0.60 * range)) and htfopen[0] >= htflow[0] - 0.10 * range
             down_major = htfclose[0] <= (htfhigh[0] - (0.60 * range)) and htfopen[0] <= htfhigh[0] + 0.10 * range
 
-            climactic_up = htfclose[0] if htfclose[0] > htfclose[1] and htfclose[0] > htfopen[0] and up_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
-            climactic_down = htfclose[0] if htfclose[1] > htfclose[0] and htfclose[0] < htfopen[0] and down_major and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
+            climactic_up = htfclose[0] if htfclose[0] > htfclose[1] and htfclose[0] > htfopen[0] and up_major and \
+                                          htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
+            climactic_down = htfclose[0] if htfclose[1] > htfclose[0] and htfclose[0] < htfopen[0] and down_major and \
+                                            htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1] else 0
             log('climactic up: ' + str(climactic_up) + ' climactic down: ' + str(climactic_down))
 
             open, high, low, close = get_current_ohlc(exchanges)
 
-            long_entry = climactic_up > 0 and close > climactic_up and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1]
-            short_entry = climactic_down > 0 and close < climactic_down and htfvolume_sum[0] > htfx_sma and htfvolume_sum[0] > htfvolume_sum[1]
+            long_entry = climactic_up > 0 and close > climactic_up and htfvolume_sum[0] > htfx_sma and htfvolume_sum[
+                0] > htfvolume_sum[1]
+            short_entry = climactic_down > 0 and close < climactic_down and htfvolume_sum[0] > htfx_sma and \
+                          htfvolume_sum[0] > htfvolume_sum[1]
             log('long entry: ' + str(long_entry) + ' short entry: ' + str(short_entry))
 
-            if not entered and (long_entry or short_entry):
+            if not bitmex_check_position() and (long_entry or short_entry):
                 type, tp, sl, set_price = enter_position(long_entry, short_entry, open, high, low, close)
-                entered = True
+                sl_thread = Thread(target=bitmex_virtual_sl, args=(set_price, type))
+                sl_thread.start()
 
-            if entered:
-                dbg = check_profit(type, set_price, close)
+            if bitmex_check_position():
+                dbg = check_opposite_signal(long_entry, short_entry, type)
                 if dbg:
-                    sl2 = set_price + SL_OFFSET if type == 'long' else set_price - SL_OFFSET
-                    offset = -SL_OFFSET if type == 'long' else SL_OFFSET
-                    order_qty = -TRADE_SIZE if type == 'long' else TRADE_SIZE
-                    bitmex_sl2(sl2, order_qty, offset)
-                dbg2 = check_close_cond(exchanges, type, sl, tp)
-                if dbg2:
-                    bitmex_close_pos()
-                    bitmex_remove_ord()
-                    entered = False
-                elif check_opposite_signal(long_entry, short_entry, type):
+                    global new_signal
+                    new_signal = True
+                    time.sleep(20)
+
                     bitmex_close_pos()
                     bitmex_remove_ord()
                     type, tp, sl, set_price = enter_position(long_entry, short_entry, open, high, low, close)
+                    new_signal = False
+                    sl_thread = Thread(target=bitmex_virtual_sl, args=(set_price, type))
+                    sl_thread.start()
 
             time.sleep(1 * 60 + randint(0, 30))
 
