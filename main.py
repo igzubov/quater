@@ -57,6 +57,7 @@ def bitmex_virtual_sl(set_price, type):
         if (type == 'long' and curr_price <= sl_price) or (type == 'short' and curr_price >= sl_price):
             time.sleep(1)
             bitmex_close_pos()
+            time.sleep(1)
             bitmex_remove_ord()
             break
 
@@ -321,6 +322,7 @@ def main():
                 sl_thread = Thread(target=bitmex_virtual_sl, args=(set_price, type))
                 sl_thread.start()
 
+            time.sleep(1)
             if bitmex_check_position():
                 dbg = check_opposite_signal(long_entry, short_entry, type)
                 if dbg:
