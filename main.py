@@ -253,10 +253,13 @@ def enter_position(long_entry, short_entry, open, high, low, close):
 
     order_qty = TRADE_SIZE if type == 'long' else -TRADE_SIZE
     bitmex_enter(entry_price, order_qty)
+    time.sleep(1)
     # place stop loss
     bitmex_sl(sl, order_qty * -1)
+    time.sleep(1)
     # place take profit
     bitmex_tp(tp, order_qty * -1)
+    time.sleep(1)
 
     return type, tp, sl, entry_price
 
