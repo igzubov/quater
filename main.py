@@ -216,12 +216,12 @@ def bitmex_sl2(stop_price, order_qty, offset):
 
 
 def bitmex_check_position():
-    res = None
     filter = json.dumps({'symbol': 'XBTUSD'})
     params = {'filter': filter, 'count': 1}
-    while not res:
-        res = btmx.private_get_position(params)
-    return res[0]['isOpen']
+    res = btmx.private_get_position(params)
+    if res:
+        return res[0]['isOpen']
+    return False
 
 
 def bitmex_tp(price, order_qty):
