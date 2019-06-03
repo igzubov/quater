@@ -40,26 +40,36 @@ def bitmex_virtual_sl(set_price, type):
     is_profit = False
     sl_price = set_price - SL_OFFSET if type == 'long' else set_price + SL_OFFSET
     while not is_profit and not new_signal:
-        curr_price = bitmex_last_price()
-        is_profit = check_profit(type, set_price, curr_price)
-        time.sleep(2)
+        try:
+            curr_price = bitmex_last_price()
+            is_profit = check_profit(type, set_price, curr_price)
+            time.sleep(2)
+        except Exception as e:
+            log(e)
+    log('Current position is in profit now')
     while bitmex_check_position() and not new_signal:
-        time.sleep(2)
-        curr_price = bitmex_last_price()
+        try:
+            time.sleep(2)
+            curr_price = bitmex_last_price()
 
-        diff = curr_price - set_price
+            diff = curr_price - set_price
 
-        if type == 'long' and diff >= SL_OFFSET:
-            sl_price = curr_price - SL_OFFSET
-        elif type == 'short' and diff <= SL_OFFSET:
-            sl_price = curr_price + SL_OFFSET
+            if type == 'long' and diff >= SL_OFFSET:
+                sl_price = curr_price - SL_OFFSET
+                log('Moved price to ' + sl_price)
+            elif type == 'short' and diff <= SL_OFFSET:
+                sl_price = curr_price + SL_OFFSET
+                log('Moved price to ' + sl_price)
 
-        if (type == 'long' and curr_price <= sl_price) or (type == 'short' and curr_price >= sl_price):
-            time.sleep(1)
-            bitmex_close_pos()
-            time.sleep(1)
-            bitmex_remove_ord()
-            break
+            if (type == 'long' and curr_price <= sl_price) or (type == 'short' and curr_price >= sl_price):
+                log('Closing trailing stop..')
+                time.sleep(1)
+                bitmex_close_pos()
+                time.sleep(1)
+                bitmex_remove_ord()
+                break
+        except Exception as e:
+            log(e)
 
 
 # use external website to get bitstamp volume historical data
