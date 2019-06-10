@@ -19,7 +19,7 @@ SL2_LEVEL = 50
 SL_OFFSET = 30
 
 # TRADE SIZE
-TRADE_SIZE = 500
+TRADE_SIZE = 100
 
 exchanges = {'binance': binance(), 'bitstamp': bitstamp(), 'bitfinex': bitfinex(), 'coinbase': coinbasepro(),
              'bitmex': bitmex(), 'hitbtc': hitbtc2(), 'kraken': kraken(), 'bittrex': bittrex(), 'huobi': huobipro()}
@@ -43,6 +43,7 @@ def bitmex_virtual_sl(set_price, type):
         try:
             curr_price = bitmex_last_price()
             is_profit = check_profit(type, set_price, curr_price)
+            print(set_price, curr_price, is_profit)
             time.sleep(2)
         except Exception as e:
             log(e)
