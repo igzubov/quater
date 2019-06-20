@@ -47,6 +47,7 @@ def bitmex_virtual_sl(set_price, type):
             time.sleep(2)
         except Exception as e:
             log(e)
+            time.sleep(2)
     log('Current position is in profit now')
     while bitmex_check_position() and not new_signal:
         try:
@@ -71,6 +72,7 @@ def bitmex_virtual_sl(set_price, type):
                 break
         except Exception as e:
             log(e)
+            time.sleep(2)
 
 
 # use external website to get bitstamp volume historical data
