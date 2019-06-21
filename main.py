@@ -58,10 +58,10 @@ def bitmex_virtual_sl(set_price, type):
 
             if type == 'long' and diff >= SL_OFFSET:
                 sl_price = curr_price - SL_OFFSET
-                log('Moved price to ' + sl_price)
+                log('Moved price to ' + str(sl_price))
             elif type == 'short' and diff <= SL_OFFSET:
                 sl_price = curr_price + SL_OFFSET
-                log('Moved price to ' + sl_price)
+                log('Moved price to ' + str(sl_price))
 
             if (type == 'long' and curr_price <= sl_price) or (type == 'short' and curr_price >= sl_price):
                 log('Closing trailing stop..')
