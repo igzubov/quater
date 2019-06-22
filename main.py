@@ -49,6 +49,8 @@ def bitmex_virtual_sl(set_price, type):
             log(e)
             time.sleep(2)
     log('Current position is in profit now')
+
+    prev_diff = 0
     while bitmex_check_position() and not new_signal:
         try:
             time.sleep(2)
@@ -56,10 +58,10 @@ def bitmex_virtual_sl(set_price, type):
 
             diff = curr_price - set_price
 
-            if type == 'long' and diff >= SL_OFFSET:
+            if type == 'long' and diff > prev_diff and diff >= SL_OFFSET:
                 sl_price = curr_price - SL_OFFSET
                 log('Moved price to ' + str(sl_price))
-            elif type == 'short' and diff <= SL_OFFSET:
+            elif type == 'short' and diff < prev_diff and diff <= SL_OFFSET:
                 sl_price = curr_price + SL_OFFSET
                 log('Moved price to ' + str(sl_price))
 
@@ -70,6 +72,8 @@ def bitmex_virtual_sl(set_price, type):
                 time.sleep(1)
                 bitmex_remove_ord()
                 break
+
+            prev_diff = diff
         except Exception as e:
             log(e)
             time.sleep(2)
