@@ -180,9 +180,9 @@ def check_opposite_signal(long_entry, short_entry, type):
 
 def check_profit(type, set_price, curr_price):
     diff = curr_price - set_price
-    if type == 'long' and diff >= 50:
+    if type == 'long' and diff >= SL2_LEVEL:
         return True
-    elif type == 'short' and diff <= -50:
+    elif type == 'short' and diff <= -SL2_LEVEL:
         return True
 
     return False
