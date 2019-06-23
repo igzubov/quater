@@ -77,7 +77,7 @@ def bitmex_virtual_sl(set_price, type):
                     global hour_closed
                     hour_closed = True
                     next_hour = 60 - datetime.now().minute
-                    time.sleep(next_hour)
+                    time.sleep(next_hour * 60)
                     hour_closed = False
                     break
 
@@ -307,7 +307,7 @@ def main():
             # sleep till next hour
             if hour_closed:
                 next_hour = 60 - datetime.now().minute
-                time.sleep(next_hour)
+                time.sleep(next_hour * 60)
 
             ohlcv = get_data(exchanges, symbols)
             # print_last_ohlcv(ohlcv)
