@@ -30,6 +30,7 @@ btmx = bitmex({'apiKey': BITMEX_API_KEY, 'secret': BITMEX_API_SECRET})
 
 
 new_signal = False
+hour_closed = False
 # uncomment for testnet
 # if 'test' in btmx.urls:
 #     btmx.urls['api'] = btmx.urls['test']  # ←----- switch the base URL to testnet
@@ -71,6 +72,13 @@ def bitmex_virtual_sl(set_price, type):
                     bitmex_close_pos()
                     time.sleep(1)
                     bitmex_remove_ord()
+
+                    # sleep till next hour
+                    global hour_closed
+                    hour_closed = True
+                    next_hour = 60 - datetime.now().minute
+                    time.sleep(next_hour)
+                    hour_closed = False
                     break
 
                 prev_diff = diff
@@ -296,6 +304,11 @@ def main():
     entered = False
     while True:
         try:
+            # sleep till next hour
+            if hour_closed:
+                next_hour = 60 - datetime.now().minute
+                time.sleep(next_hour)
+
             ohlcv = get_data(exchanges, symbols)
             # print_last_ohlcv(ohlcv)
             try:
