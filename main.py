@@ -61,8 +61,10 @@ def bitmex_virtual_sl(set_price, type):
 
                 if type == 'long' and diff > prev_diff and diff >= SL_OFFSET:
                     sl_price = curr_price - SL_OFFSET
+                    prev_diff = diff
                     log('Moved price to ' + str(sl_price))
                 elif type == 'short' and diff < prev_diff and diff <= SL_OFFSET:
+                    prev_diff = diff
                     sl_price = curr_price + SL_OFFSET
                     log('Moved price to ' + str(sl_price))
 
@@ -81,7 +83,6 @@ def bitmex_virtual_sl(set_price, type):
                     hour_closed = False
                     break
 
-                prev_diff = diff
     except Exception as e:
         log(e)
         time.sleep(2)
