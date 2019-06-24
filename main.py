@@ -40,12 +40,12 @@ hour_closed = False
 def bitmex_virtual_sl(set_price, type):
     is_profit = False
     sl_price = set_price - SL_OFFSET if type == 'long' else set_price + SL_OFFSET
-    while not is_profit and not new_signal:
+    while not is_profit and not new_signal and not bitmex_check_position():
         try:
+            time.sleep(2)
             curr_price = bitmex_last_price()
             is_profit = check_profit(type, set_price, curr_price)
             print(set_price, curr_price, is_profit)
-            time.sleep(2)
         except Exception as e:
             log(e)
             time.sleep(2)
@@ -69,19 +69,20 @@ def bitmex_virtual_sl(set_price, type):
                     log('Moved price to ' + str(sl_price))
 
                 if (type == 'long' and curr_price <= sl_price) or (type == 'short' and curr_price >= sl_price):
-                    log('Closing trailing stop..')
-                    time.sleep(1)
-                    bitmex_close_pos()
-                    time.sleep(1)
-                    bitmex_remove_ord()
-
-                    # sleep till next hour
-                    global hour_closed
-                    hour_closed = True
-                    next_hour = 60 - datetime.now().minute
-                    time.sleep(next_hour * 60)
-                    hour_closed = False
                     break
+
+        log('Closing trailing stop..')
+        time.sleep(1)
+        bitmex_close_pos()
+        time.sleep(1)
+        bitmex_remove_ord()
+
+        # sleep till next hour
+        global hour_closed
+        hour_closed = True
+        next_hour = 60 - datetime.now().minute
+        time.sleep(next_hour * 60)
+        hour_closed = False
 
     except Exception as e:
         log(e)
@@ -200,7 +201,6 @@ def check_profit(type, set_price, curr_price):
 
     return False
 
-
 def bitmex_close_pos():
     res = None
     params = {'symbol': 'XBTUSD', 'execInst': 'Close'}
@@ -240,6 +240,13 @@ def bitmex_sl2(stop_price, order_qty, offset):
         res = btmx.private_post_order(params)
     return res['orderID']
 
+def bitmex_get_orders():
+    filter = json.dumps({'open': 'true'})
+    params = {'symbol': 'XBTUSD', 'filter': filter, 'count': 5}
+    res = btmx.private_get_order(params)
+    if res:
+        return res
+    return False
 
 def bitmex_check_position():
     filter = json.dumps({'symbol': 'XBTUSD'})
@@ -348,10 +355,15 @@ def main():
                           htfvolume_sum[0] > htfvolume_sum[1]
             log('long entry: ' + str(long_entry) + ' short entry: ' + str(short_entry))
 
-            if not bitmex_check_position() and (long_entry or short_entry):
-                type, tp, sl, set_price = enter_position(long_entry, short_entry, open, high, low, close)
-                sl_thread = Thread(target=bitmex_virtual_sl, args=(set_price, type))
-                sl_thread.start()
+            if not bitmex_check_position():
+                time.sleep(1)
+                if len(bitmex_get_orders()) < 2:
+                    bitmex_remove_ord()
+
+                if long_entry or short_entry:
+                    type, tp, sl, set_price = enter_position(long_entry, short_entry, open, high, low, close)
+                    sl_thread = Thread(target=bitmex_virtual_sl, args=(set_price, type))
+                    sl_thread.start()
 
             time.sleep(1)
             if bitmex_check_position():
