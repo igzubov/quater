@@ -240,13 +240,13 @@ def bitmex_sl2(stop_price, order_qty, offset):
         res = btmx.private_post_order(params)
     return res['orderID']
 
+
 def bitmex_get_orders():
     filter = json.dumps({'open': 'true'})
     params = {'symbol': 'XBTUSD', 'filter': filter, 'count': 5}
     res = btmx.private_get_order(params)
-    if res:
-        return res
-    return False
+
+    return res
 
 def bitmex_check_position():
     filter = json.dumps({'symbol': 'XBTUSD'})
