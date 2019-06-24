@@ -41,7 +41,7 @@ hour_closed = False
 def bitmex_virtual_sl(set_price, type):
     is_profit = False
     sl_price = set_price - SL_OFFSET if type == 'long' else set_price + SL_OFFSET
-    while not is_profit and not new_signal and not bitmex_check_position():
+    while not is_profit and not new_signal and bitmex_check_position():
         try:
             time.sleep(2)
             curr_price = bitmex_last_price()
