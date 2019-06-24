@@ -28,9 +28,10 @@ symbols = {'binance': 'BTC/USDC', 'bitstamp': 'BTC/USD', 'bitfinex': 'BTC/USD', 
 
 btmx = bitmex({'apiKey': BITMEX_API_KEY, 'secret': BITMEX_API_SECRET})
 
-
 new_signal = False
 hour_closed = False
+
+
 # uncomment for testnet
 # if 'test' in btmx.urls:
 #     btmx.urls['api'] = btmx.urls['test']  # ←----- switch the base URL to testnet
@@ -54,22 +55,22 @@ def bitmex_virtual_sl(set_price, type):
     prev_diff = 0
     try:
         while bitmex_check_position() and not new_signal:
-                time.sleep(2)
-                curr_price = bitmex_last_price()
+            time.sleep(2)
+            curr_price = bitmex_last_price()
 
-                diff = curr_price - set_price
+            diff = curr_price - set_price
 
-                if type == 'long' and diff > prev_diff and diff >= SL_OFFSET:
-                    sl_price = curr_price - SL_OFFSET
-                    prev_diff = diff
-                    log('Moved price to ' + str(sl_price))
-                elif type == 'short' and diff < prev_diff and diff <= SL_OFFSET:
-                    prev_diff = diff
-                    sl_price = curr_price + SL_OFFSET
-                    log('Moved price to ' + str(sl_price))
+            if type == 'long' and diff > prev_diff and diff >= SL_OFFSET:
+                sl_price = curr_price - SL_OFFSET
+                prev_diff = diff
+                log('Moved price to ' + str(sl_price))
+            elif type == 'short' and diff < prev_diff and diff <= SL_OFFSET:
+                prev_diff = diff
+                sl_price = curr_price + SL_OFFSET
+                log('Moved price to ' + str(sl_price))
 
-                if (type == 'long' and curr_price <= sl_price) or (type == 'short' and curr_price >= sl_price):
-                    break
+            if (type == 'long' and curr_price <= sl_price) or (type == 'short' and curr_price >= sl_price):
+                break
 
         log('Closing trailing stop..')
         time.sleep(1)
@@ -201,6 +202,7 @@ def check_profit(type, set_price, curr_price):
 
     return False
 
+
 def bitmex_close_pos():
     res = None
     params = {'symbol': 'XBTUSD', 'execInst': 'Close'}
@@ -247,6 +249,7 @@ def bitmex_get_orders():
     res = btmx.private_get_order(params)
 
     return res
+
 
 def bitmex_check_position():
     filter = json.dumps({'symbol': 'XBTUSD'})
