@@ -360,7 +360,7 @@ def main():
 
             if not bitmex_check_position():
                 time.sleep(1)
-                if len(bitmex_get_orders()) < 2:
+                if len(bitmex_get_orders()) == 1:
                     bitmex_remove_ord()
 
                 if long_entry or short_entry:
