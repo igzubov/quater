@@ -230,16 +230,11 @@ def bitmex_sl(stop_price, order_qty):
     params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'ordType': 'Stop', 'stopPx': stop_price,
               'execInst': 'LastPrice'}
     while not res:
-        res = btmx.private_post_order(params)
-    return res['orderID']
-
-
-def bitmex_sl2(stop_price, order_qty, offset):
-    res = None
-    params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'ordType': 'Stop', 'pegPriceType': 'TrailingStopPeg',
-              'stopPx': stop_price, 'pegOffsetValue': offset, 'execInst': 'LastPrice'}
-    while not res:
-        res = btmx.private_post_order(params)
+        try:
+            res = btmx.private_post_order(params)
+        except Exception as e:
+            log(e)
+            time.sleep(1)
     return res['orderID']
 
 
@@ -265,7 +260,11 @@ def bitmex_tp(price, order_qty):
     params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'stopPx': price, 'ordType': 'MarketIfTouched',
               'execInst': 'LastPrice'}
     while not res:
-        res = btmx.private_post_order(params)
+        try:
+            res = btmx.private_post_order(params)
+        except Exception as e:
+            log(e)
+            time.sleep(1)
     return res['orderID']
 
 
@@ -273,7 +272,11 @@ def bitmex_enter(price, order_qty):
     res = None
     params = {'symbol': 'XBTUSD', 'orderQty': order_qty, 'ordType': 'Market'}
     while not res:
-        res = btmx.private_post_order(params)
+        try:
+            res = btmx.private_post_order(params)
+        except Exception as e:
+            log(e)
+            time.sleep(1)
     return res['orderID']
 
 
