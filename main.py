@@ -73,14 +73,15 @@ def bitmex_virtual_sl(set_price, type):
                 break
 
         log('Closing trailing stop..')
+        # sleep till next hour
+        global hour_closed
+        hour_closed = True
+
         time.sleep(1)
         bitmex_close_pos()
         time.sleep(1)
         bitmex_remove_ord()
 
-        # sleep till next hour
-        global hour_closed
-        hour_closed = True
         next_hour = 65 - datetime.now().minute
         time.sleep(next_hour * 60)
         hour_closed = False
@@ -207,14 +208,22 @@ def bitmex_close_pos():
     res = None
     params = {'symbol': 'XBTUSD', 'execInst': 'Close'}
     while not res:
-        res = btmx.private_post_order(params)
+        try:
+            res = btmx.private_post_order(params)
+        except Exception as e:
+            log(e)
+            time.sleep(1)
 
 
 def bitmex_remove_ord():
     res = None
     params = {'symbol': 'XBTUSD'}
     while not res:
-        res = btmx.private_delete_order_all(params)
+        try:
+            res = btmx.private_delete_order_all(params)
+        except Exception as e:
+            log(e)
+            time.sleep(1)
 
 
 def bitmex_move_trail(price, order_qty, order_id):
@@ -361,7 +370,7 @@ def main():
                           htfvolume_sum[0] > htfvolume_sum[1]
             log('long entry: ' + str(long_entry) + ' short entry: ' + str(short_entry))
 
-            if not bitmex_check_position():
+            if not hour_closed and not bitmex_check_position():
                 time.sleep(1)
                 if len(bitmex_get_orders()) == 1:
                     bitmex_remove_ord()
@@ -372,7 +381,7 @@ def main():
                     sl_thread.start()
 
             time.sleep(1)
-            if bitmex_check_position():
+            if not hour_closed and bitmex_check_position():
                 dbg = check_opposite_signal(long_entry, short_entry, type)
                 if dbg:
                     global new_signal
