@@ -49,7 +49,7 @@ def bitmex_virtual_sl(set_price, type):
             print(set_price, curr_price, is_profit)
     except Exception as e:
         log(e)
-        time.sleep(2)
+        handle_timeout(e)
     log('Current position is in profit now')
 
     prev_diff = 0
@@ -88,6 +88,16 @@ def bitmex_virtual_sl(set_price, type):
 
     except Exception as e:
         log(e)
+        handle_timeout(e)
+
+
+def handle_timeout(e):
+    str = 'timeout='
+    pos = e.args[0].find(str)
+    if pos > 0:
+        timeout = int(e.args[0][pos + len(str):-1])
+        time.sleep(timeout)
+    else:
         time.sleep(2)
 
 
@@ -151,7 +161,11 @@ def bitmex_last_price():
     res = None
     params = {'symbol': 'XBT'}
     while not res:
-        res = btmx.public_get_instrument(params)
+        try:
+            res = btmx.public_get_instrument(params)
+        except Exception as e:
+            log(e)
+            handle_timeout(e)
     return res[0]['lastPrice']
 
 
@@ -212,7 +226,7 @@ def bitmex_close_pos():
             res = btmx.private_post_order(params)
         except Exception as e:
             log(e)
-            time.sleep(1)
+            handle_timeout(e)
 
 
 def bitmex_remove_ord():
@@ -223,15 +237,7 @@ def bitmex_remove_ord():
             res = btmx.private_delete_order_all(params)
         except Exception as e:
             log(e)
-            time.sleep(1)
-
-
-def bitmex_move_trail(price, order_qty, order_id):
-    res = None
-    params = {'orderID': order_id, 'orderQty': order_qty, 'stopPx': price, 'ordType': 'MarketIfTouched',
-              'execInst': 'LastPrice'}
-    while not res:
-        res = btmx.private_put_order(params)
+            handle_timeout(e)
 
 
 def bitmex_sl(stop_price, order_qty):
@@ -243,7 +249,7 @@ def bitmex_sl(stop_price, order_qty):
             res = btmx.private_post_order(params)
         except Exception as e:
             log(e)
-            time.sleep(1)
+            handle_timeout(e)
     return res['orderID']
 
 
@@ -273,7 +279,7 @@ def bitmex_tp(price, order_qty):
             res = btmx.private_post_order(params)
         except Exception as e:
             log(e)
-            time.sleep(1)
+            handle_timeout(e)
     return res['orderID']
 
 
@@ -285,7 +291,7 @@ def bitmex_enter(price, order_qty):
             res = btmx.private_post_order(params)
         except Exception as e:
             log(e)
-            time.sleep(1)
+            handle_timeout(e)
     return res['orderID']
 
 
@@ -398,8 +404,8 @@ def main():
             time.sleep(1 * 60 + randint(0, 30))
 
         except Exception as e:
-            time.sleep(5)
             log(e)
+            handle_timeout(e)
 
 
 if __name__ == '__main__':
