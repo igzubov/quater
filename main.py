@@ -53,8 +53,9 @@ def bitmex_virtual_sl(set_price, type):
     log('Current position is in profit now')
 
     prev_diff = 0
-    try:
-        while bitmex_check_position() and not new_signal:
+    is_open = True
+    while is_open and not new_signal:
+        try:
             time.sleep(2)
             curr_price = bitmex_last_price()
 
@@ -70,25 +71,26 @@ def bitmex_virtual_sl(set_price, type):
                 log('Moved price to ' + str(sl_price))
 
             if (type == 'long' and curr_price <= sl_price) or (type == 'short' and curr_price >= sl_price):
+                log('Closing trailing stop..')
+                # sleep till next hour
+                global hour_closed
+                hour_closed = True
+
+                time.sleep(1)
+                bitmex_close_pos()
+                time.sleep(1)
+                bitmex_remove_ord()
+
+                next_hour = 65 - datetime.now().minute
+                time.sleep(next_hour * 60)
+                hour_closed = False
                 break
 
-        log('Closing trailing stop..')
-        # sleep till next hour
-        global hour_closed
-        hour_closed = True
+            is_open = bitmex_check_position()
 
-        time.sleep(1)
-        bitmex_close_pos()
-        time.sleep(1)
-        bitmex_remove_ord()
-
-        next_hour = 65 - datetime.now().minute
-        time.sleep(next_hour * 60)
-        hour_closed = False
-
-    except Exception as e:
-        log(e)
-        handle_timeout(e)
+        except Exception as e:
+            log(e)
+            handle_timeout(e)
 
 
 def handle_timeout(e):
