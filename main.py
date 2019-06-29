@@ -40,20 +40,22 @@ hour_closed = False
 
 def bitmex_virtual_sl(set_price, type):
     is_profit = False
+    is_open = True
     sl_price = set_price - SL_OFFSET if type == 'long' else set_price + SL_OFFSET
-    try:
-        while not is_profit and not new_signal and bitmex_check_position():
+    while not is_profit and not new_signal and is_open:
+        try:
             time.sleep(2)
             curr_price = bitmex_last_price()
             is_profit = check_profit(type, set_price, curr_price)
+            time.sleep(1)
+            is_open = bitmex_check_position()
             print(set_price, curr_price, is_profit)
-    except Exception as e:
-        log(e)
-        handle_timeout(e)
+        except Exception as e:
+            log(e)
+            handle_timeout(e)
     log('Current position is in profit now')
 
     prev_diff = 0
-    is_open = True
     while is_open and not new_signal:
         try:
             time.sleep(2)
