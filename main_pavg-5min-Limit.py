@@ -312,9 +312,11 @@ def enter_position(long_entry, short_entry, open, high, low, close):
     bitmex_enter(ep_longshort, order_qty)
     time.sleep(1)
     # place stop loss
+    print('Placing SL order')
     bitmex_sl(sl, order_qty * -1)
     time.sleep(1)
     # place take profit
+    print('Placing TP order')
     bitmex_tp(tp, order_qty * -1)
     time.sleep(1)
 
